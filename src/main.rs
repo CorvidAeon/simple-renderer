@@ -30,8 +30,8 @@ fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
     }
     let dx = mx1-mx0;
     let dy = my1-my0;
-    let derror = dy as f32/dx as f32;
-    let mut error = 0.0;
+    let derror2 = dy.pow(2);
+    let mut error2 = 0;
     let mut y = my0;
     let mut x = mx0;
     while x<=mx1 {
@@ -40,10 +40,10 @@ fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
         } else {
             img.put_pixel(x, y, color);
         }
-        error+=derror;
-        if error > 0.5 {//adding pixels when necessary
+        error2+=derror2;
+        if error2 > dx {//adding pixels when necessary
             if my1>my0 {y+=1} else {y-=1};
-            error -= 1.0;
+            error2 -= dx.pow(2);
         }       
         x+=1;
     }
