@@ -9,9 +9,8 @@ fn main() {
     line(80,40,13,20,& mut img,Rgb([255,0,0]));
     img = image::imageops::flip_vertical(& img);
     img.save("test.png").unwrap();
-    //println!("Hello, world!");
 }
-
+//This is a monstrosity... please kill it and remake.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
     let mut steep: bool = false;
     let mut mx0 = x0;
@@ -29,16 +28,23 @@ fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
         std::mem::swap(& mut mx0,& mut  mx1);
         std::mem::swap(& mut my0,& mut  my1);
     }
+    let dx = mx1-mx0;
+    let dy = my1-my0;
+    let derror = dy as f32/dx as f32;
+    let mut error = 0.0;
+    let mut y = my0;
     let mut x = mx0;
     while x<=mx1 {
-        let t: f32 = (x-mx0) as f32/(mx1-mx0) as f32;
-        let y: u32 = (my0 as f32*(1.0-t) + (my1 as f32*t)) as u32;
         if steep {
             img.put_pixel(y, x, color); //detranspose transposed version
         } else {
             img.put_pixel(x, y, color);
         }
-        
+        error+=derror;
+        if error > 0.5 {//adding pixels when necessary
+            if my1>my0 {y+=1} else {y-=1};
+            error -= 1.0;
+        }       
         x+=1;
     }
 }
