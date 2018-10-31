@@ -18,23 +18,21 @@ fn main() {
 //    for i in 0..mesh.positions.len() / 3 {
 //        println!("line: {}\nx: {},y: {},z: {}",i,mesh.positions[3*i], mesh.positions[3*i+1],mesh.positions[3*i+2])
 //    }
-    println!("{}", mesh.indices[7474]);
     //idx is a list of indices for each face
-//    for f in 0..mesh.indices.len() / 3 {
-//        println!("    idx[{}] = {}, {}, {}.", f, mesh.indices[3 * f],
-//            mesh.indices[3 * f + 1], mesh.indices[3 * f + 2]);
-//        let x0 = mesh.positions[(mesh.indices[3 * f]+1)as usize];
-//        let x1 = ((mesh.positions[mesh.indices[3 * f+1] as usize]+1.0)*scale/2.0) as u32;
-//        let x2 = ((mesh.positions[mesh.indices[3 * f+2] as usize]+1.0)*scale/2.0) as u32;
-//        let y0 = ((mesh.positions[mesh.indices[3 * f] as usize + 1]+1.0)*scale/2.0) as u32;
-//        let y1 = ((mesh.positions[mesh.indices[3 * f+1]as usize + 1]+1.0)*scale/2.0) as u32;
-//        let y2 = ((mesh.positions[mesh.indices[3 * f+2]as usize + 1]+1.0)*scale/2.0) as u32;
-//        println!("x0: {}, x1: {}, x2: {}, y0: {}, y1: {}, y2: {}", x0, x1, x2, y0, y1, y2);
-//        //line(x0,y0,x1,y1,&mut img, Rgb([255,255,255]));
-//
-        //line(x1,y1,x2,y2,&mut img, Rgb([255,255,255]));
-        //line(x2,y2,x0,y0,&mut img, Rgb([255,255,255]));
-//    }
+    for f in 0..mesh.indices.len() / 3 {
+        println!("    idx[{}] = {}, {}, {}.", f, mesh.indices[3 * f],
+            mesh.indices[3 * f + 1], mesh.indices[3 * f + 2]);
+        let x0 = ((mesh.positions[3 * (mesh.indices[3 * f])as usize]+1.0)*scale/2.0) as u32;//x
+        let x1 = ((mesh.positions[3 * mesh.indices[3 * f + 1] as usize]+1.0)*scale/2.0) as u32;
+        let x2 = ((mesh.positions[3 * mesh.indices[3 * f + 2] as usize]+1.0)*scale/2.0) as u32;
+        let y0 = ((mesh.positions[3 * mesh.indices[3 * f] as usize +1]+1.0)*scale/2.0) as u32;
+        let y1 = ((mesh.positions[3 * mesh.indices[3 * f + 1]as usize + 1]+1.0)*scale/2.0) as u32;
+        let y2 = ((mesh.positions[3 * mesh.indices[3 * f + 2]as usize + 1]+1.0)*scale/2.0) as u32;
+        println!("x0: {}, x1: {}, x2: {}, y0: {}, y1: {}, y2: {}", x0, x1, x2, y0, y1, y2);
+        line(x0,y0,x1,y1,&mut img, Rgb([255,255,255]));
+        line(x1,y1,x2,y2,&mut img, Rgb([255,255,255]));
+        line(x2,y2,x0,y0,&mut img, Rgb([255,255,255]));
+    }
 
     // Normals and texture coordinates are also loaded, but not printed in this example
     //println!("model[{}].vertices: {}", i, mesh.positions.len() / 3);
@@ -45,8 +43,8 @@ fn main() {
     //}
     //}
 
-    //img = image::imageops::flip_vertical(& img);
-    //img.save("face.png").unwrap();
+    img = image::imageops::flip_vertical(& img);
+    img.save("face.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
