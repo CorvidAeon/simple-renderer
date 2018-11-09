@@ -57,7 +57,7 @@ fn main() {
     //}
 
     img = image::imageops::flip_vertical(& img);
-    img.save("trifill.png").unwrap();
+    img.save("tritest.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
@@ -155,7 +155,7 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
     let mut e: FloatVertex = FloatVertex::from_vertex(v_low);
     if dx_mid_low > dx_high_low {
         while s.y <= v_mid.y as f32 {
-            horizontal_line(s.x as i32, e.x as i32, s.y as i32, img, color);
+            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             e.y+=1.0;
             s.y+=1.0;
             s.x+=dx_high_low;
@@ -163,7 +163,7 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
         }
         e = FloatVertex::from_vertex(v_mid);
         while s.y <= v_high.y as f32 {
-            horizontal_line(s.x as i32, e.x as i32, s.y as i32, img, color);
+            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             s.y+=1.0;
             e.y+=1.0;
             s.x+=dx_high_low;
@@ -171,7 +171,7 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
         }
     } else {
         while s.y <= v_mid.y as f32 {
-            horizontal_line(s.x as i32, e.x as i32, s.y as i32, img, color);
+            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             e.y+=1.0;
             s.y+=1.0;
             s.x+=dx_mid_low;
@@ -179,7 +179,7 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
         }
         s = FloatVertex::from_vertex(v_mid);
         while s.y <= v_high.y as f32{
-            horizontal_line(s.x as i32, e.x as i32, s.y as i32, img, color);
+            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             s.y+=1.0;
             e.y+=1.0;
             s.x+=dx_high_mid;
