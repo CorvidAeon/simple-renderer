@@ -154,7 +154,7 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
     let mut s: FloatVertex = FloatVertex::from_vertex(v_low);
     let mut e: FloatVertex = FloatVertex::from_vertex(v_low);
     if dx_mid_low > dx_high_low {
-        while s.y <= v_mid.y as f32 {
+        while s.y < v_mid.y as f32 {
             horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             e.y+=1.0;
             s.y+=1.0;
@@ -170,20 +170,23 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
             e.x+=dx_high_mid;
         }
     } else {
-        while s.y <= v_mid.y as f32 {
+        while s.y < v_mid.y as f32 {
             horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             e.y+=1.0;
             s.y+=1.0;
             s.x+=dx_mid_low;
             e.x+=dx_high_low;
+            println!("e.x: {}", e.x);
         }
         s = FloatVertex::from_vertex(v_mid);
+        println!("2nd half\ne.x: {}", e.x);
         while s.y <= v_high.y as f32{
             horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             s.y+=1.0;
             e.y+=1.0;
             s.x+=dx_high_mid;
             e.x+=dx_high_low;
+            println!("e.x: {}", e.x);
         }
     }
     
