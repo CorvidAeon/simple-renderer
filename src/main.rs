@@ -189,8 +189,4 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
             println!("e.x: {}", e.x);
         }
     }
-    
-    line(v_mid.x as u32, v_mid.y as u32,v_high.x as u32, v_high.y as u32, img, Rgb([255,0,0]));
-    line(v_low.x as u32, v_low.y as u32, v_mid.x as u32, v_mid.y as u32, img, Rgb([255,0,0]));
-    line(v_low.x as u32,v_low.y as u32, v_high.x as u32, v_high.y as u32, img, Rgb([255,0,0]));
 }
