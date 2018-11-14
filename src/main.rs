@@ -1,10 +1,13 @@
 extern crate image;
 extern crate tobj;
+extern crate nalgebra;
 
 use image::{RgbImage, Rgb};
 use std::path::Path;
 use tobj::{Mesh,Model,Material};
+use nalgebra::{Vector2, Vector3, Vector4};
 
+//probably gonna swap these out with nalgebra lib
 #[derive(Debug, Clone, Copy)]
 struct Vertex {
     x: i32,
@@ -31,33 +34,21 @@ fn main() {
     let (models, materials) = obj_file.unwrap();
     println!("# of models: {}", models.len());
     println!("# of materials: {}", materials.len());
-    let scale = 512.0;
+    let scale = 511.0;
     let mut img = RgbImage::new((scale + 1.0) as u32,(scale + 1.0) as u32);
     let mesh = &models[0].mesh;
 
-//    for i in 0..mesh.positions.len() / 3 {
-//        println!("line: {}\nx: {},y: {},z: {}",i,mesh.positions[3*i], mesh.positions[3*i+1],mesh.positions[3*i+2])
-//    }
     //idx is a list of indices for each face
 //    for (i, m) in models.iter().enumerate() {
 //        let mesh = &m.mesh;
 //        assert!(mesh.positions.len() % 3 ==0);
 //        println!("model[{}].name = \'{}\'", i, m.name);
-//    wireframe(mesh, & mut img, Rgb([255,255,255]), scale);
+//   wireframe(mesh, & mut img, Rgb([255,255,255]), scale);
 //    }
     triangle(Vertex{x:100, y:100, z:0}, Vertex{x:40, y:70, z:0}, Vertex{x:8, y:8, z:0}, & mut img, Rgb([255,255,255]));
 
-    // Normals and texture coordinates are also loaded, but not printed in this example
-    //println!("model[{}].vertices: {}", i, mesh.positions.len() / 3);
-    //assert!(mesh.positions.len() % 3 == 0);
-    //for v in 0..mesh.positions.len() / 3 {
-    //        println!("    v[{}] = ({}, {}, {})", v, mesh.positions[3 * v],
-    //            mesh.positions[3 * v + 1], mesh.positions[3 * v + 2]);
-    //}
-    //}
-
     img = image::imageops::flip_vertical(& img);
-    img.save("tritest.png").unwrap();
+    img.save("face.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
