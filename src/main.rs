@@ -5,7 +5,7 @@ extern crate nalgebra;
 use image::{RgbImage, Rgb};
 use std::path::Path;
 use tobj::{Mesh,Model,Material};
-use nalgebra::{Vector2, Vector3, Vector4};
+use nalgebra::{Point, Point2, Point3};
 
 //probably gonna swap these out with nalgebra lib
 #[derive(Debug, Clone, Copy)]
@@ -28,6 +28,16 @@ impl FloatVertex {
     }
 }
 
+pub trait Floatify3 {
+    fn to_float(& self) -> Point3<f32>;
+}
+
+impl Floatify3 for Point3<i32> {
+    fn to_float(& self) -> Point3<f32> {
+        Point3::new(self.x as f32, self.y as f32, self.z as f32)
+    }
+}
+
 fn main() {
     let obj_file = tobj::load_obj(&Path::new("african_head.obj"));
     assert!(obj_file.is_ok());
@@ -37,6 +47,8 @@ fn main() {
     let scale = 511.0;
     let mut img = RgbImage::new((scale + 1.0) as u32,(scale + 1.0) as u32);
     let mesh = &models[0].mesh;
+    let v = Point2::new(1,2);
+    println!("{}", v.y);
 
     //idx is a list of indices for each face
 //    for (i, m) in models.iter().enumerate() {
@@ -45,10 +57,10 @@ fn main() {
 //        println!("model[{}].name = \'{}\'", i, m.name);
 //   wireframe(mesh, & mut img, Rgb([255,255,255]), scale);
 //    }
-    triangle(Vertex{x:100, y:100, z:0}, Vertex{x:40, y:70, z:0}, Vertex{x:8, y:8, z:0}, & mut img, Rgb([255,255,255]));
+    //triangle(Vertex{x:100, y:100, z:0}, Vertex{x:40, y:70, z:0}, Vertex{x:8, y:8, z:0}, & mut img, Rgb([255,255,255]));
 
-    img = image::imageops::flip_vertical(& img);
-    img.save("face.png").unwrap();
+    //img = image::imageops::flip_vertical(& img);
+    //img.save("face.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
@@ -128,10 +140,10 @@ fn wireframe(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32){
 }
 //Go from bottom to top and make left and right side bounds.
 //Everything passing image around, maybe make a class later.
-fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u8>){
-    let mut v_high: Vertex = v0;
-    let mut v_mid: Vertex = v1;
-    let mut v_low: Vertex = v2;
+fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbImage,color: Rgb<u8>){
+    let mut v_high: Point3<i32> = v0;
+    let mut v_mid: Point3<i32> = v1;
+    let mut v_low: Point3<i32> = v2;
     //Sorting high to low
     if v_high.y < v_mid.y { std::mem::swap(& mut v_high, & mut v_mid)};
     if v_high.y < v_low.y { std::mem::swap(& mut v_high, & mut v_low)};
@@ -142,8 +154,8 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
     let dx_high_mid = if v_high.y > v_mid.y {(v_high.x  as f32 - v_mid.x  as f32)/(v_high.y  as f32 - v_mid.y  as f32)} else {0.0};
 
     println!("mid_low: {}\nhigh_low: {}\nhigh_mid: {}", dx_mid_low, dx_high_low, dx_high_mid);
-    let mut s: FloatVertex = FloatVertex::from_vertex(v_low);
-    let mut e: FloatVertex = FloatVertex::from_vertex(v_low);
+    let mut s: Point3<f32> = Point3::to_float(& v_low);
+    let mut e: Point3<f32> = Point3::to_float(& v_low);
     if dx_mid_low > dx_high_low {
         while s.y < v_mid.y as f32 {
             horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
@@ -152,7 +164,7 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
             s.x+=dx_high_low;
             e.x+=dx_mid_low;
         }
-        e = FloatVertex::from_vertex(v_mid);
+        e = Point3::to_float(& v_mid);
         while s.y <= v_high.y as f32 {
             horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
             s.y+=1.0;
@@ -169,7 +181,7 @@ fn triangle(v0: Vertex, v1: Vertex, v2: Vertex, img: & mut RgbImage,color: Rgb<u
             e.x+=dx_high_low;
             println!("e.x: {}", e.x);
         }
-        s = FloatVertex::from_vertex(v_mid);
+        s = Point3::to_float(& v_mid);
         println!("2nd half\ne.x: {}", e.x);
         while s.y <= v_high.y as f32{
             horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
