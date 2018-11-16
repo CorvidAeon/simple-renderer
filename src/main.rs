@@ -22,6 +22,13 @@ struct FloatVertex {
     z: f32,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct BBox {
+    min_x: i32,
+    min_y: i32,
+    max_x: i32,
+    max_y: i32,
+}
 impl FloatVertex {
     fn from_vertex(v: Vertex) -> Self {
         FloatVertex{x: v.x as f32, y: v.y as f32, z: v.z as f32}
@@ -199,9 +206,21 @@ fn barycentric_coords(a : Point3<i32>, b : Point3<i32>, c : Point3<i32>, p : Poi
     let x_component : Vector3<f32> = Vector3::new((c.x - a.x) as f32, (b.x - a.x) as f32, (a.x - p.x) as f32);
     let y_component : Vector3<f32> = Vector3::new((c.y - a.y) as f32, (b.y - a.y) as f32, (a.y - p.y) as f32);
     let u : Vector3<f32> = x_component.cross(& y_component);
-    if u.z < 1.0 {
+    if u.z < 1.0 { //degenerate triangle
         return Vector3::new(-1.0, 1.0, 1.0)
     } else {
         Vector3::new(1.0-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z)
     }
+}
+
+fn compute_bbox_triangle(v_high: Point3<i32>, v_mid: Point3<i32>, v_low: Point3<i32>) -> BBox {
+    let y_max = v_high.y;//v_high is the highest y point v_low is lowest y
+    let y_min = v_low.y;
+    let mut x_min : i32 = v_low.x;
+    let mut x_mid : i32 = v_mid.x;
+    let mut x_max : i32 = v_high.x;
+    if x_max < x_mid { std::mem::swap(& mut x_max, & mut x_mid)};
+    if x_max < x_min { std::mem::swap(& mut x_max, & mut x_min)};
+    if x_mid < x_min { std::mem::swap(& mut x_mid, & mut x_min)};
+    BBox{min_x: x_min, min_y: y_min, max_x: x_max, max_y: y_max}
 }
