@@ -5,7 +5,7 @@ extern crate nalgebra;
 use image::{RgbImage, Rgb};
 use std::path::Path;
 use tobj::{Mesh,Model,Material};
-use nalgebra::{Point, Point2, Point3};
+use nalgebra::{Point, Point2, Point3, Vector3};
 
 //probably gonna swap these out with nalgebra lib
 #[derive(Debug, Clone, Copy)]
@@ -191,5 +191,17 @@ fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbIma
             e.x+=dx_high_low;
             println!("e.x: {}", e.x);
         }
+    }
+}
+
+//c highest a lowest? Keeping track of all this flipping is painful
+fn barycentric_coords(a : Point3<i32>, b : Point3<i32>, c : Point3<i32>, p : Point3<i32>) -> Vector3<f32> {
+    let x_component : Vector3<f32> = Vector3::new((c.x - a.x) as f32, (b.x - a.x) as f32, (a.x - p.x) as f32);
+    let y_component : Vector3<f32> = Vector3::new((c.y - a.y) as f32, (b.y - a.y) as f32, (a.y - p.y) as f32);
+    let u : Vector3<f32> = x_component.cross(& y_component);
+    if u.z < 1.0 {
+        return Vector3::new(-1.0, 1.0, 1.0)
+    } else {
+        Vector3::new(1.0-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z)
     }
 }
