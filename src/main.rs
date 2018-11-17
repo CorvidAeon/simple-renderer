@@ -64,10 +64,10 @@ fn main() {
 //        println!("model[{}].name = \'{}\'", i, m.name);
 //   wireframe(mesh, & mut img, Rgb([255,255,255]), scale);
 //    }
-    //triangle(Vertex{x:100, y:100, z:0}, Vertex{x:40, y:70, z:0}, Vertex{x:8, y:8, z:0}, & mut img, Rgb([255,255,255]));
+    triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
 
-    //img = image::imageops::flip_vertical(& img);
-    //img.save("face.png").unwrap();
+    img = image::imageops::flip_vertical(& img);
+    img.save("triangletest.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
@@ -156,47 +156,18 @@ fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbIma
     if v_high.y < v_low.y { std::mem::swap(& mut v_high, & mut v_low)};
     if v_mid.y < v_low.y { std::mem::swap(& mut v_mid, & mut v_low)};
 
-    let dx_mid_low = if v_mid.y > v_low.y {(v_mid.x  as f32 - v_low.x  as f32)/(v_mid.y  as f32 - v_low.y  as f32)} else {0.0};
-    let dx_high_low = if v_high.y > v_low.y {(v_high.x  as f32 - v_low.x  as f32)/(v_high.y  as f32 - v_low.y  as f32)} else {0.0};
-    let dx_high_mid = if v_high.y > v_mid.y {(v_high.x  as f32 - v_mid.x  as f32)/(v_high.y  as f32 - v_mid.y  as f32)} else {0.0};
-
-    println!("mid_low: {}\nhigh_low: {}\nhigh_mid: {}", dx_mid_low, dx_high_low, dx_high_mid);
-    let mut s: Point3<f32> = Point3::to_float(& v_low);
-    let mut e: Point3<f32> = Point3::to_float(& v_low);
-    if dx_mid_low > dx_high_low {
-        while s.y < v_mid.y as f32 {
-            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
-            e.y+=1.0;
-            s.y+=1.0;
-            s.x+=dx_high_low;
-            e.x+=dx_mid_low;
-        }
-        e = Point3::to_float(& v_mid);
-        while s.y <= v_high.y as f32 {
-            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
-            s.y+=1.0;
-            e.y+=1.0;
-            s.x+=dx_high_low;
-            e.x+=dx_high_mid;
-        }
-    } else {
-        while s.y < v_mid.y as f32 {
-            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
-            e.y+=1.0;
-            s.y+=1.0;
-            s.x+=dx_mid_low;
-            e.x+=dx_high_low;
-            println!("e.x: {}", e.x);
-        }
-        s = Point3::to_float(& v_mid);
-        println!("2nd half\ne.x: {}", e.x);
-        while s.y <= v_high.y as f32{
-            horizontal_line(s.x.round() as i32, e.x.round() as i32, s.y as i32, img, color);
-            s.y+=1.0;
-            e.y+=1.0;
-            s.x+=dx_high_mid;
-            e.x+=dx_high_low;
-            println!("e.x: {}", e.x);
+    let bbox : BBox = compute_bbox_triangle(v_high, v_mid, v_low);
+    let mut barycentric : Vector3<f32>;
+    let mut p : Point3<i32> = Point3::new(0, 0, 0);
+    for x in bbox.min_x..=bbox.max_x {
+        for y in bbox.min_y..=bbox.max_y {
+            p.x = x;
+            p.y = y;
+            barycentric = barycentric_coords(v_low, v_mid, v_high, p);
+            if (barycentric.x < 0.0) || (barycentric.y < 0.0) || (barycentric.z < 0.0) {
+                continue;
+            }
+            img.put_pixel(x as u32, y as u32, color);
         }
     }
 }
