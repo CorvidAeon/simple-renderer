@@ -1,11 +1,13 @@
 extern crate image;
 extern crate tobj;
 extern crate nalgebra;
+extern crate rand;
 
 use image::{RgbImage, Rgb};
 use std::path::Path;
 use tobj::{Mesh,Model,Material};
 use nalgebra::{Point, Point2, Point3, Vector3};
+use rand::Rng;
 
 //probably gonna swap these out with nalgebra lib
 #[derive(Debug, Clone, Copy)]
@@ -54,20 +56,18 @@ fn main() {
     let scale = 511.0;
     let mut img = RgbImage::new((scale + 1.0) as u32,(scale + 1.0) as u32);
     let mesh = &models[0].mesh;
-    let v = Point2::new(1,2);
-    println!("{}", v.y);
 
     //idx is a list of indices for each face
 //    for (i, m) in models.iter().enumerate() {
 //        let mesh = &m.mesh;
 //        assert!(mesh.positions.len() % 3 ==0);
 //        println!("model[{}].name = \'{}\'", i, m.name);
-//   wireframe(mesh, & mut img, Rgb([255,255,255]), scale);
+    clown_render(mesh, & mut img, Rgb([255,255,255]), scale);
 //    }
-    triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
+    // triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
 
     img = image::imageops::flip_vertical(& img);
-    img.save("triangletest.png").unwrap();
+    img.save("clown.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
@@ -194,4 +194,23 @@ fn compute_bbox_triangle(v_high: Point3<i32>, v_mid: Point3<i32>, v_low: Point3<
     if x_max < x_min { std::mem::swap(& mut x_max, & mut x_min)};
     if x_mid < x_min { std::mem::swap(& mut x_mid, & mut x_min)};
     BBox{min_x: x_min, min_y: y_min, max_x: x_max, max_y: y_max}
+}
+
+fn clown_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
+    let mut rng = rand::thread_rng();
+    for f in 0..mesh.indices.len() / 3 {
+        let x0 = ((mesh.positions[3 * (mesh.indices[3 * f])as usize]+1.0)*scale/2.0) as i32;//x
+        let x1 = ((mesh.positions[3 * mesh.indices[3 * f + 1] as usize]+1.0)*scale/2.0) as i32;
+        let x2 = ((mesh.positions[3 * mesh.indices[3 * f + 2] as usize]+1.0)*scale/2.0) as i32;
+        let y0 = ((mesh.positions[3 * mesh.indices[3 * f] as usize +1]+1.0)*scale/2.0) as i32;
+        let y1 = ((mesh.positions[3 * mesh.indices[3 * f + 1]as usize + 1]+1.0)*scale/2.0) as i32;
+        let y2 = ((mesh.positions[3 * mesh.indices[3 * f + 2]as usize + 1]+1.0)*scale/2.0) as i32;
+        let z0 = ((mesh.positions[3 * mesh.indices[3 * f]as usize + 2]+1.0)*scale/2.0) as i32;
+        let z1 = ((mesh.positions[3 * mesh.indices[3 * f + 1]as usize + 2]+1.0)*scale/2.0) as i32;
+        let z2 = ((mesh.positions[3 * mesh.indices[3 * f + 2]as usize + 2]+1.0)*scale/2.0) as i32;
+        let v0 : Point3<i32> = Point3::new(x0, y0, z0);
+        let v1 : Point3<i32> = Point3::new(x1, y1, z1);
+        let v2 : Point3<i32> = Point3::new(x2, y2, z2);
+        triangle(v0, v1, v2, img, Rgb([rng.gen(), rng.gen(), rng.gen()]));
+    }
 }
