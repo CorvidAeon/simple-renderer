@@ -152,6 +152,7 @@ fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbIma
     let mut v_mid: Point3<i32> = v1;
     let mut v_low: Point3<i32> = v2;
     //Sorting high to low
+    let mut hit_flag: bool = false;
     if v_high.y < v_mid.y { std::mem::swap(& mut v_high, & mut v_mid)};
     if v_high.y < v_low.y { std::mem::swap(& mut v_high, & mut v_low)};
     if v_mid.y < v_low.y { std::mem::swap(& mut v_mid, & mut v_low)};
@@ -167,8 +168,12 @@ fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbIma
             if (barycentric.x < 0.0) || (barycentric.y < 0.0) || (barycentric.z < 0.0) {
                 continue;
             }
+            hit_flag = true;
             img.put_pixel(x as u32, y as u32, color);
         }
+    }
+    if !hit_flag {
+        println!("Triangle {}, {}, {} missed\nBBox min: {}, {}\nBBox max: {}, {}", v_high,v_mid,v_low,bbox.min_x, bbox.min_y, bbox.max_x, bbox.max_y);
     }
 }
 
