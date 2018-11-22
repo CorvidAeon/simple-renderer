@@ -47,6 +47,12 @@ impl Floatify3 for Point3<i32> {
     }
 }
 
+enum Direction {
+    X = 0,
+    Y = 1,
+    Z = 2,
+}
+
 fn main() {
     let obj_file = tobj::load_obj(&Path::new("african_head.obj"));
     assert!(obj_file.is_ok());
@@ -62,12 +68,12 @@ fn main() {
 //        let mesh = &m.mesh;
 //        assert!(mesh.positions.len() % 3 ==0);
 //        println!("model[{}].name = \'{}\'", i, m.name);
-    clown_render(mesh, & mut img, Rgb([255,255,255]), scale);
+    wireframe(mesh, & mut img, Rgb([255,255,255]), scale);
 //    }
     // triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
 
     img = image::imageops::flip_vertical(& img);
-    img.save("clown.png").unwrap();
+    img.save("wiretest.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
@@ -133,13 +139,14 @@ fn iline(x0: i32, y0: i32, x1: i32, y1: i32,img: & mut RgbImage,color: Rgb<u8>) 
 }
 
 fn wireframe(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32){
+    let get_coord = | index: usize, dir: usize, f: usize | ((mesh.positions[3 * (mesh.indices[3 * f + index])as usize + dir]+1.0)*scale/2.0) as u32;
     for f in 0..mesh.indices.len() / 3 {
-        let x0 = ((mesh.positions[3 * (mesh.indices[3 * f])as usize]+1.0)*scale/2.0) as u32;//x
-        let x1 = ((mesh.positions[3 * mesh.indices[3 * f + 1] as usize]+1.0)*scale/2.0) as u32;
-        let x2 = ((mesh.positions[3 * mesh.indices[3 * f + 2] as usize]+1.0)*scale/2.0) as u32;
-        let y0 = ((mesh.positions[3 * mesh.indices[3 * f] as usize +1]+1.0)*scale/2.0) as u32;
-        let y1 = ((mesh.positions[3 * mesh.indices[3 * f + 1]as usize + 1]+1.0)*scale/2.0) as u32;
-        let y2 = ((mesh.positions[3 * mesh.indices[3 * f + 2]as usize + 1]+1.0)*scale/2.0) as u32;
+        let x0 = get_coord(0,Direction::X as usize, f);
+        let x1 = get_coord(1,Direction::X as usize, f);
+        let x2 = get_coord(2,Direction::X as usize, f);
+        let y0 = get_coord(0,Direction::Y as usize, f);
+        let y1 = get_coord(1,Direction::Y as usize, f);
+        let y2 = get_coord(2,Direction::Y as usize, f);
         line(x0,y0,x1,y1,img, color);
         line(x1,y1,x2,y2,img, color);
         line(x2,y2,x0,y0,img, color);
@@ -203,19 +210,24 @@ fn compute_bbox_triangle(v_high: Point3<i32>, v_mid: Point3<i32>, v_low: Point3<
 
 fn clown_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
     let mut rng = rand::thread_rng();
+    let get_coord = | index: usize, dir: usize, f: usize | ((mesh.positions[3 * (mesh.indices[3 * f + index])as usize + dir]+1.0)*scale/2.0) as i32;
     for f in 0..mesh.indices.len() / 3 {
-        let x0 = ((mesh.positions[3 * (mesh.indices[3 * f])as usize]+1.0)*scale/2.0) as i32;//x
-        let x1 = ((mesh.positions[3 * mesh.indices[3 * f + 1] as usize]+1.0)*scale/2.0) as i32;
-        let x2 = ((mesh.positions[3 * mesh.indices[3 * f + 2] as usize]+1.0)*scale/2.0) as i32;
-        let y0 = ((mesh.positions[3 * mesh.indices[3 * f] as usize +1]+1.0)*scale/2.0) as i32;
-        let y1 = ((mesh.positions[3 * mesh.indices[3 * f + 1]as usize + 1]+1.0)*scale/2.0) as i32;
-        let y2 = ((mesh.positions[3 * mesh.indices[3 * f + 2]as usize + 1]+1.0)*scale/2.0) as i32;
-        let z0 = ((mesh.positions[3 * mesh.indices[3 * f]as usize + 2]+1.0)*scale/2.0) as i32;
-        let z1 = ((mesh.positions[3 * mesh.indices[3 * f + 1]as usize + 2]+1.0)*scale/2.0) as i32;
-        let z2 = ((mesh.positions[3 * mesh.indices[3 * f + 2]as usize + 2]+1.0)*scale/2.0) as i32;
+        let x0 = get_coord(0,Direction::X as usize, f);
+        let x1 = get_coord(1,Direction::X as usize, f);
+        let x2 = get_coord(2,Direction::X as usize, f);
+        let y0 = get_coord(0,Direction::Y as usize, f);
+        let y1 = get_coord(1,Direction::Y as usize, f);
+        let y2 = get_coord(2,Direction::Y as usize, f);
+        let z0 = get_coord(0,Direction::Z as usize, f);
+        let z1 = get_coord(1,Direction::Z as usize, f);
+        let z2 = get_coord(2,Direction::Z as usize, f);
         let v0 : Point3<i32> = Point3::new(x0, y0, z0);
         let v1 : Point3<i32> = Point3::new(x1, y1, z1);
         let v2 : Point3<i32> = Point3::new(x2, y2, z2);
         triangle(v0, v1, v2, img, Rgb([rng.gen(), rng.gen(), rng.gen()]));
     }
+}
+
+fn basic_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
+
 }
