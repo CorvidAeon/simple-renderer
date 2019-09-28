@@ -68,12 +68,12 @@ fn main() {
 //        let mesh = &m.mesh;
 //        assert!(mesh.positions.len() % 3 ==0);
 //        println!("model[{}].name = \'{}\'", i, m.name);
-    wireframe(mesh, & mut img, Rgb([255,255,255]), scale);
+    basic_render(mesh, & mut img, Rgb([255,255,255]), scale);
 //    }
-    // triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
+//   triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
 
     img = image::imageops::flip_vertical(& img);
-    img.save("wiretest.png").unwrap();
+    img.save("basictest.png").unwrap();
 }
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
@@ -173,6 +173,7 @@ fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbIma
             p.y = y;
             barycentric = barycentric_coords(v_low, v_mid, v_high, p);
             if (barycentric.x < 0.0) || (barycentric.y < 0.0) || (barycentric.z < 0.0) {
+                //println!("Barycentric coords: {}, {}, {}",barycentric.x,barycentric.y,barycentric.z);
                 continue;
             }
             hit_flag = true;
@@ -189,11 +190,11 @@ fn barycentric_coords(a : Point3<i32>, b : Point3<i32>, c : Point3<i32>, p : Poi
     let x_component : Vector3<f32> = Vector3::new((c.x - a.x) as f32, (b.x - a.x) as f32, (a.x - p.x) as f32);
     let y_component : Vector3<f32> = Vector3::new((c.y - a.y) as f32, (b.y - a.y) as f32, (a.y - p.y) as f32);
     let u : Vector3<f32> = x_component.cross(& y_component);
-    if u.z < 1.0 { //degenerate triangle
-        return Vector3::new(-1.0, 1.0, 1.0)
-    } else {
-        Vector3::new(1.0-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z)
-    }
+    //if u.z == 0.0 { //Unexpectedly this actually cuts out valid triangles, I must be missing something.
+    //    return Vector3::new(-1.0, 1.0, 1.0)
+    //} else {
+    Vector3::new(1.0-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z)//1-infinity is negative so this'll be caught later anyways.
+    //}
 }
 
 fn compute_bbox_triangle(v_high: Point3<i32>, v_mid: Point3<i32>, v_low: Point3<i32>) -> BBox {
@@ -212,6 +213,7 @@ fn clown_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
     let mut rng = rand::thread_rng();
     let get_coord = | index: usize, dir: usize, f: usize | ((mesh.positions[3 * (mesh.indices[3 * f + index])as usize + dir]+1.0)*scale/2.0) as i32;
     for f in 0..mesh.indices.len() / 3 {
+        println!("{}", f);
         let x0 = get_coord(0,Direction::X as usize, f);
         let x1 = get_coord(1,Direction::X as usize, f);
         let x2 = get_coord(2,Direction::X as usize, f);
@@ -229,5 +231,39 @@ fn clown_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
 }
 
 fn basic_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
-
+    // for (int i=0; i<model->nfaces(); i++) { 
+    // std::vector<int> face = model->face(i); 
+    // Vec2i screen_coords[3]; 
+    // for (int j=0; j<3; j++) { 
+    //     Vec3f world_coords = model->vert(face[j]); 
+    //     screen_coords[j] = Vec2i((world_coords.x+1.)*width/2., (world_coords.y+1.)*height/2.); 
+    // } 
+    // triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(rand()%255, rand()%255, rand()%255, 255)); 
+    let light_dir : Vector3<f32> = Vector3::new(0.0,0.0,-0.5);
+    let mut rng = rand::thread_rng();
+    let get_coord = | index: usize, dir: usize, f: usize | ((mesh.positions[3 * (mesh.indices[3 * f + index])as usize + dir]+1.0)*scale/2.0) as i32;
+    let world_coord = | index: usize, f: usize | Vector3::new(mesh.positions[3*(mesh.indices[3*f+index]) as usize + (Direction::X as usize)] as f32,
+                                                                        mesh.positions[3*(mesh.indices[3*f+index]) as usize + (Direction::Y as usize)] as f32,
+                                                                        mesh.positions[3*(mesh.indices[3*f+index]) as usize + (Direction::Z as usize)] as f32);
+    for f in 0..mesh.indices.len() / 3 {
+        println!("{}", f);
+        let x0 = get_coord(0,Direction::X as usize, f);
+        let x1 = get_coord(1,Direction::X as usize, f);
+        let x2 = get_coord(2,Direction::X as usize, f);
+        let y0 = get_coord(0,Direction::Y as usize, f);
+        let y1 = get_coord(1,Direction::Y as usize, f);
+        let y2 = get_coord(2,Direction::Y as usize, f);
+        let z0 = get_coord(0,Direction::Z as usize, f);
+        let z1 = get_coord(1,Direction::Z as usize, f);
+        let z2 = get_coord(2,Direction::Z as usize, f);
+        let v0 : Point3<i32> = Point3::new(x0, y0, z0);
+        let v1 : Point3<i32> = Point3::new(x1, y1, z1);
+        let v2 : Point3<i32> = Point3::new(x2, y2, z2);
+        let n : Vector3<f32> = ((world_coord(2,f)-world_coord(0,f)).cross(&(world_coord(1,f)-world_coord(0,f)))).normalize();
+        let intensity : f32 = n.dot(&light_dir);
+        if intensity > 0.0 {
+            triangle(v0, v1, v2, img, Rgb([(intensity*255.0) as u8, (intensity*255.0) as u8, (intensity*255.0) as u8]));
+        }
+    }
+    
 }
