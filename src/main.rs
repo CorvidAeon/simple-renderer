@@ -54,6 +54,40 @@ enum Direction {
 }
 
 fn main() {
+    const width : usize = 800;
+    let mut img = RgbImage::new(width as u32,16);
+    let red : Rgb<u8> = Rgb([255,0,0]);
+    let green : Rgb<u8> = Rgb([0,255,0]);
+    let blue : Rgb<u8> = Rgb([0,0,255]);
+    let white : Rgb<u8> = Rgb([255,255,255]);
+
+    let mut ybuffer: [i32; width] = [std::i32::MIN; width];
+    //scene "2d mesh"
+    rasterize(&mut Point2::new(20,34),&mut Point2::new(744,400),&mut img, red, &mut ybuffer);
+    rasterize(&mut Point2::new(120,434),&mut Point2::new(444,400),&mut img, green, &mut ybuffer);
+    rasterize(&mut Point2::new(330,463),&mut Point2::new(594,200),&mut img, blue, &mut ybuffer);
+
+    //img = image::imageops::flip_vertical(& img);
+    img.save("1dtest.png").unwrap();
+}
+
+fn rasterize(p0: &mut Point2<i32>, p1: &mut Point2<i32>, img: & mut RgbImage, color: Rgb<u8>, ybuffer : &mut [i32]) {
+    let mut p0 = &*p0;
+    let mut p1 = &*p1;
+    if p0.x > p1.x {
+        std::mem::swap(& mut p0,& mut p1);
+    }
+    for x in p0.x..=p1.x {
+        let t :f32 = (x-p0.x) as f32/(p1.x-p0.x) as f32;
+        let y :i32 = (p0.y as f32*(1.0-t)+p1.y as f32*t) as i32;
+        if ybuffer[x as usize]<y {
+            ybuffer[x as usize]=y;
+            img.put_pixel(x as u32,0,color);
+        }
+    }
+}
+
+fn oldmain(){
     let obj_file = tobj::load_obj(&Path::new("african_head.obj"));
     assert!(obj_file.is_ok());
     let (models, materials) = obj_file.unwrap();
