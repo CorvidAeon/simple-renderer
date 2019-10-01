@@ -53,23 +53,34 @@ enum Direction {
     Z = 2,
 }
 
+
 fn main() {
-    const width : usize = 800;
-    let mut img = RgbImage::new(width as u32,16);
-    let red : Rgb<u8> = Rgb([255,0,0]);
-    let green : Rgb<u8> = Rgb([0,255,0]);
-    let blue : Rgb<u8> = Rgb([0,0,255]);
-    let white : Rgb<u8> = Rgb([255,255,255]);
+    const dim: usize = 512;
+    //use a vec
+    let mut zbuffer = vec![vec![std::i32::MIN; dim];dim]; 
 
-    let mut ybuffer: [i32; width] = [std::i32::MIN; width];
-    //scene "2d mesh"
-    rasterize(&mut Point2::new(20,34),&mut Point2::new(744,400),&mut img, red, &mut ybuffer);
-    rasterize(&mut Point2::new(120,434),&mut Point2::new(444,400),&mut img, green, &mut ybuffer);
-    rasterize(&mut Point2::new(330,463),&mut Point2::new(594,200),&mut img, blue, &mut ybuffer);
+    let obj_file = tobj::load_obj(&Path::new("african_head.obj"));
+    assert!(obj_file.is_ok());
+    let (models, materials) = obj_file.unwrap();
+    println!("# of models: {}", models.len());
+    println!("# of materials: {}", materials.len());
+    let scale = 511.0;
+    let mut img = RgbImage::new((scale + 1.0) as u32,(scale + 1.0) as u32);
+    let mesh = &models[0].mesh;
 
-    //img = image::imageops::flip_vertical(& img);
-    img.save("1dtest.png").unwrap();
+    //idx is a list of indices for each face
+//    for (i, m) in models.iter().enumerate() {
+//        let mesh = &m.mesh;
+//        assert!(mesh.positions.len() % 3 ==0);
+//        println!("model[{}].name = \'{}\'", i, m.name);
+    basic_render(mesh, & mut img, Rgb([255,255,255]), scale, &mut zbuffer);
+//    }
+//   triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
+
+    img = image::imageops::flip_vertical(& img);
+    img.save("zbufftest.png").unwrap();
 }
+
 
 fn rasterize(p0: &mut Point2<i32>, p1: &mut Point2<i32>, img: & mut RgbImage, color: Rgb<u8>, ybuffer : &mut [i32]) {
     let mut p0 = &*p0;
@@ -87,28 +98,7 @@ fn rasterize(p0: &mut Point2<i32>, p1: &mut Point2<i32>, img: & mut RgbImage, co
     }
 }
 
-fn oldmain(){
-    let obj_file = tobj::load_obj(&Path::new("african_head.obj"));
-    assert!(obj_file.is_ok());
-    let (models, materials) = obj_file.unwrap();
-    println!("# of models: {}", models.len());
-    println!("# of materials: {}", materials.len());
-    let scale = 511.0;
-    let mut img = RgbImage::new((scale + 1.0) as u32,(scale + 1.0) as u32);
-    let mesh = &models[0].mesh;
 
-    //idx is a list of indices for each face
-//    for (i, m) in models.iter().enumerate() {
-//        let mesh = &m.mesh;
-//        assert!(mesh.positions.len() % 3 ==0);
-//        println!("model[{}].name = \'{}\'", i, m.name);
-    basic_render(mesh, & mut img, Rgb([255,255,255]), scale);
-//    }
-//   triangle(Point3::new(100, 100, 0), Point3::new(40, 70, 0), Point3::new(8, 8, 0), & mut img, Rgb([255,255,255]));
-
-    img = image::imageops::flip_vertical(& img);
-    img.save("basictest.png").unwrap();
-}
 //This is a monstrosity... please kill it and remake. Remaking is harder than it looks.
 fn line(x0: u32, y0:u32,x1:u32,y1:u32,img: & mut RgbImage,color: Rgb<u8>){
     let mut steep: bool = false;
@@ -188,7 +178,7 @@ fn wireframe(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32){
 }
 //Go from bottom to top and make left and right side bounds.
 //Everything passing image around, maybe make a class later.
-fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbImage,color: Rgb<u8>){
+fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbImage,color: Rgb<u8>, zbuffer: &mut Vec<Vec<i32>>){
     let mut v_high: Point3<i32> = v0;
     let mut v_mid: Point3<i32> = v1;
     let mut v_low: Point3<i32> = v2;
@@ -200,18 +190,22 @@ fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbIma
 
     let bbox : BBox = compute_bbox_triangle(v_high, v_mid, v_low);
     let mut barycentric : Vector3<f32>;
-    let mut p : Point3<i32> = Point3::new(0, 0, 0);
+    let mut p : Point3<f32> = Point3::new(0.0, 0.0, 0.0);
     for x in bbox.min_x..=bbox.max_x {
         for y in bbox.min_y..=bbox.max_y {
-            p.x = x;
-            p.y = y;
-            barycentric = barycentric_coords(v_low, v_mid, v_high, p);
+            p.x = x as f32;
+            p.y = y as f32;
+            barycentric = barycentric_coords(v_low.to_float(), v_mid.to_float(), v_high.to_float(), p);
             if (barycentric.x < 0.0) || (barycentric.y < 0.0) || (barycentric.z < 0.0) {
                 //println!("Barycentric coords: {}, {}, {}",barycentric.x,barycentric.y,barycentric.z);
                 continue;
             }
-            hit_flag = true;
-            img.put_pixel(x as u32, y as u32, color);
+            p.z = v_low.z as f32 * barycentric.x + v_mid.z as f32*barycentric.y + v_high.z as f32* barycentric.z;
+            if zbuffer[p.x as usize][p.y as usize] < (p.z as i32) {
+                zbuffer[p.x as usize][p.y as usize] = p.z as i32;
+                hit_flag = true;
+                img.put_pixel(x as u32, y as u32, color);
+            }
         }
     }
     if !hit_flag {
@@ -220,7 +214,7 @@ fn triangle(v0: Point3<i32>, v1: Point3<i32>, v2: Point3<i32>, img: & mut RgbIma
 }
 
 //c highest a lowest? Keeping track of all this flipping is painful
-fn barycentric_coords(a : Point3<i32>, b : Point3<i32>, c : Point3<i32>, p : Point3<i32>) -> Vector3<f32> {
+fn barycentric_coords(a : Point3<f32>, b : Point3<f32>, c : Point3<f32>, p : Point3<f32>) -> Vector3<f32> {
     let x_component : Vector3<f32> = Vector3::new((c.x - a.x) as f32, (b.x - a.x) as f32, (a.x - p.x) as f32);
     let y_component : Vector3<f32> = Vector3::new((c.y - a.y) as f32, (b.y - a.y) as f32, (a.y - p.y) as f32);
     let u : Vector3<f32> = x_component.cross(& y_component);
@@ -243,7 +237,7 @@ fn compute_bbox_triangle(v_high: Point3<i32>, v_mid: Point3<i32>, v_low: Point3<
     BBox{min_x: x_min, min_y: y_min, max_x: x_max, max_y: y_max}
 }
 
-fn clown_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
+fn clown_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32, zbuffer: &mut Vec<Vec<i32>>) {
     let mut rng = rand::thread_rng();
     let get_coord = | index: usize, dir: usize, f: usize | ((mesh.positions[3 * (mesh.indices[3 * f + index])as usize + dir]+1.0)*scale/2.0) as i32;
     for f in 0..mesh.indices.len() / 3 {
@@ -260,11 +254,11 @@ fn clown_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
         let v0 : Point3<i32> = Point3::new(x0, y0, z0);
         let v1 : Point3<i32> = Point3::new(x1, y1, z1);
         let v2 : Point3<i32> = Point3::new(x2, y2, z2);
-        triangle(v0, v1, v2, img, Rgb([rng.gen(), rng.gen(), rng.gen()]));
+        triangle(v0, v1, v2, img, Rgb([rng.gen(), rng.gen(), rng.gen()]), zbuffer);
     }
 }
 
-fn basic_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
+fn basic_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32,zbuffer: &mut Vec<Vec<i32>>) {
     // for (int i=0; i<model->nfaces(); i++) { 
     // std::vector<int> face = model->face(i); 
     // Vec2i screen_coords[3]; 
@@ -296,7 +290,7 @@ fn basic_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32) {
         let n : Vector3<f32> = ((world_coord(2,f)-world_coord(0,f)).cross(&(world_coord(1,f)-world_coord(0,f)))).normalize();
         let intensity : f32 = n.dot(&light_dir);
         if intensity > 0.0 {
-            triangle(v0, v1, v2, img, Rgb([(intensity*255.0) as u8, (intensity*255.0) as u8, (intensity*255.0) as u8]));
+            triangle(v0, v1, v2, img, Rgb([(intensity*255.0) as u8, (intensity*255.0) as u8, (intensity*255.0) as u8]), zbuffer);
         }
     }
     
