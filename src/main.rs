@@ -274,7 +274,7 @@ fn basic_render(mesh: & Mesh, img: & mut RgbImage, color: Rgb<u8>, scale: f32,zb
                                                                         mesh.positions[3*(mesh.indices[3*f+index]) as usize + (Direction::Y as usize)] as f32,
                                                                         mesh.positions[3*(mesh.indices[3*f+index]) as usize + (Direction::Z as usize)] as f32);
     for f in 0..mesh.indices.len() / 3 {
-        println!("{}", f);
+        //println!("{}", f);
         let x0 = get_coord(0,Direction::X as usize, f);
         let x1 = get_coord(1,Direction::X as usize, f);
         let x2 = get_coord(2,Direction::X as usize, f);
